@@ -1,0 +1,12 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+snn = { path = "../snn" }
+bytemuck = { version = "1.24.0", features = ["derive"] }
+mimalloc = "0.1.48"
+pollster = "0.4.0"
+wgpu = "27.0.1"
+winit = "0.30.12"
