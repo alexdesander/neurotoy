@@ -27,10 +27,17 @@ pub struct Model {
     state: Vec<f32>,
     /// decay factor beta = exp(-dt / tau_s)
     beta: f32,
+    // ----------------------- Other simulation state
 }
 
 impl Default for Model {
     fn default() -> Self {
+        Self::empty()
+    }
+}
+
+impl Model {
+    pub fn empty() -> Self {
         // Reasonable simulation defaults:
         // alpha: small leak per step
         // beta: slow synaptic decay
@@ -48,12 +55,6 @@ impl Default for Model {
             state: Vec::new(),
             beta: 0.9,
         }
-    }
-}
-
-impl Model {
-    pub fn empty() -> Self {
-        Self::default()
     }
 
     /// Build a 1D chain: 0 → 1 → 2 → ... → (n-1).
@@ -152,6 +153,54 @@ impl Model {
             weight,
             state,
             ..Default::default()
+        }
+    }
+
+    pub fn set_charge(&mut self, neuron: u32, charge: f32) {
+        self.v[neuron as usize] = charge;
+    }
+
+    pub fn get_charge(&self, neuron: u32) -> f32 {
+        self.v[neuron as usize]
+    }
+
+    /// Simulate the model for one time step.
+    pub fn tick(&mut self) {
+        // 1) Leak membranes
+        for v in &mut self.v {
+            *v *= 1.0 - self.alpha;
+        }
+
+        // 2) Decay synapses
+        for s in &mut self.state {
+            *s *= self.beta;
+        }
+
+        // 3) Update refrac for neurons
+        for r in &mut self.refrac {
+            *r = r.saturating_sub(1);
+        }
+
+        // 4) Propagate synapse state to neurons
+        for (syn, &recv) in self.state.iter().zip(self.receiver.iter()) {
+            self.v[recv as usize] += syn;
+        }
+
+        // 5) Update spikes
+        for i in 0..self.v.len() {
+            let v = &mut self.v[i];
+            if *v < self.v_th[i] || self.refrac[i] > 0 {
+                continue;
+            }
+            *v = self.v_reset[i];
+            self.refrac[i] = self.refrac_len;
+
+            // Send spike (to synapses)
+            let start = self.out_offset[i] as usize;
+            let end = self.out_offset[i + 1] as usize;
+            for j in start..end {
+                self.state[j] += self.weight[j];
+            }
         }
     }
 
