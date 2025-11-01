@@ -1,11 +1,44 @@
 use mimalloc::MiMalloc;
-use snn::Model;
+use winit::{
+    application::ApplicationHandler,
+    event::WindowEvent,
+    event_loop::{ActiveEventLoop, EventLoop},
+    window::WindowId,
+};
+
+use crate::app::App;
+
+mod app;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() {
-    let model = Model::grid(100, 100);
+    let event_loop = EventLoop::new().unwrap();
+    let mut app = WinitWrapper::default();
+    event_loop.run_app(&mut app).unwrap();
+}
 
-    std::fs::write("output.png", model.to_neato_png().unwrap()).unwrap();
+#[derive(Default)]
+struct WinitWrapper {
+    app: Option<App>,
+}
+
+impl ApplicationHandler for WinitWrapper {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        if self.app.is_none() {
+            self.app = Some(App::new(event_loop));
+        }
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        window_id: WindowId,
+        event: WindowEvent,
+    ) {
+        if let Some(app) = self.app.as_mut() {
+            app.window_event(event_loop, window_id, event);
+        }
+    }
 }

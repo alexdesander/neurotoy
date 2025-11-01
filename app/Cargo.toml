@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 snn = { path = "../snn" }
+winit_input_manager = { git = "https://github.com/alexdesander/winit_input_manager" }
 bytemuck = { version = "1.24.0", features = ["derive"] }
 mimalloc = "0.1.48"
 pollster = "0.4.0"
