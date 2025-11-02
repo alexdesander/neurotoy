@@ -1,7 +1,7 @@
 use mimalloc::MiMalloc;
 use winit::{
     application::ApplicationHandler,
-    event::WindowEvent,
+    event::{DeviceEvent, DeviceId, WindowEvent},
     event_loop::{ActiveEventLoop, EventLoop},
     window::WindowId,
 };
@@ -39,6 +39,17 @@ impl ApplicationHandler for WinitWrapper {
     ) {
         if let Some(app) = self.app.as_mut() {
             app.window_event(event_loop, window_id, event);
+        }
+    }
+
+    fn device_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        device_id: DeviceId,
+        event: DeviceEvent,
+    ) {
+        if let Some(app) = self.app.as_mut() {
+            app.device_event(event_loop, device_id, event);
         }
     }
 }
